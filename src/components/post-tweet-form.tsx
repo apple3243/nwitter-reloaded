@@ -58,13 +58,19 @@ export default function PostTweetForm(){
     const [isLoading, setLoading] = useState(false)
     const [tweet, setTweet] = useState("");
     const [file, setFile] = useState<File|null>(null);
+    const maxSize = 10 * 1024 * 1024;
     const onChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         setTweet(e.target.value)
     };
     const onFileChange = (e:React.ChangeEvent<HTMLInputElement>) => {
         const {files} = e.target;
+        //This let users upload files only within 2MB
+        if(files && files[0].size > maxSize ){
+            alert("The uploaded file is too big");
+            return;
+        }
         //This let users upload only one file
-        if(files && files.length === 1 && files[0].size < 10024 ){
+        if(files && files.length === 1){
             setFile(files[0]);
         }
     }
@@ -81,7 +87,7 @@ export default function PostTweetForm(){
                 userId : user.uid,
             })
             if(file){
-                const locationRef = ref(storage,`tweets/${user.uid}-${user.displayName}/${doc.id}`);
+                const locationRef = ref(storage,`tweets/${user.uid}/${doc.id}`);
                 const result = await uploadBytes(locationRef, file);
                 const url = await getDownloadURL(result.ref);
                 await updateDoc(doc, {
@@ -99,7 +105,7 @@ export default function PostTweetForm(){
     return <Form onSubmit={onSubmit}>
         <TextArea required rows={5} maxLength={180} onChange={onChange} value={tweet} placeholder="What is happening"/>
         <AttachFileButton htmlFor="file">{file ? "Photo added ✅":"Add Photo"}</AttachFileButton>
-        <AttachFileInput onChange={onFileChange} id="file" type="file" accept="image/*"/>
+        <AttachFileInput onChange={onFileChange} id="file" type="file" accept="image/*" ref={ref}/>
         <SubmitBtn type="submit" value={isLoading ? "Posting...":"Post Tweet"}/>
     </Form>
 }
